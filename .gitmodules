@@ -5,3 +5,7 @@
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/Transmissions11/solmate
+[submodule "lib/clm"]
+	path = lib/clm
+	url = https://github.com/Canto-Network/clm
+	branch = v1.0.0
