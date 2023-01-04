@@ -12,10 +12,17 @@ import {WETH} from "clm/WETH.sol";
 
 import {ExponentialNoError as fpMath} from "./ExponentialNoError.sol";
 
+interface LPPair {
+    function claimFees() external returns (uint claimed0, uint claimed1);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+}
+
 contract MotorChef is Owned(msg.sender), ReentrancyGuard {
 
     Comptroller public constant comptroller = Comptroller(0x5E23dC409Fc2F832f83CEc191E245A191a4bCc5C);
-    WETH public constant weth = WETH(payable(0x826551890Dc65655a0Aceca109aB11AbDbD7a07B));
+    WETH        public constant weth = WETH(payable(0x826551890Dc65655a0Aceca109aB11AbDbD7a07B));
+    address     public constant lpPair = 0x42A515C472b3B953beb8ab68aDD27f4bA3792451;
 
     // Info of each user.
     struct UserInfo {
@@ -67,7 +74,7 @@ contract MotorChef is Owned(msg.sender), ReentrancyGuard {
         cTokenInfo.push(CToken(0x3C96dCfd875253A37acB3D2B102b6f328349b16B)); //cCantoNoteLP
         cTokenInfo.push(CToken(0xC0D6574b2fe71eED8Cd305df0DA2323237322557)); //cCantoAtomLP
         cTokenInfo.push(CToken(0xb49A395B39A0b410675406bEE7bD06330CB503E3)); //cCantoETHLP
-        add(100, ERC20(0x42A515C472b3B953beb8ab68aDD27f4bA3792451), false);  //cINU/WCANTO pair
+        add(100, ERC20(lpPair), false);  //cINU/WCANTO pair
     }
 
     function poolLength() external view returns (uint256) {
@@ -288,5 +295,27 @@ contract MotorChef is Owned(msg.sender), ReentrancyGuard {
         CToken token = CToken(cToken);
         uint256 bal = token.balanceOf(address(this));
         token.transfer(msg.sender, bal);
+    }
+
+    // owner can claim LP fees from Forteswap pair
+    function claimLPFees(uint256 pid) public onlyOwner {
+        LPPair lp = LPPair(address(poolInfo[pid].lpToken));
+        (uint claimed0, uint claimed1) = LPPair(lp).claimFees();
+        
+        //transfer with error handling if we hold less than the claimed amount
+        // this approach has the risk that we have too many assets in here if claimed is understated, 
+        // but this approach removes the possibility of sweeping WETH due to stakers
+        ERC20(lp.token0()).transfer(
+            msg.sender, 
+            claimed0 > ERC20(lp.token0()).balanceOf(address(this))? 
+                ERC20(lp.token0()).balanceOf(address(this)) : 
+                claimed0
+        );
+        ERC20(lp.token1()).transfer(
+            msg.sender, 
+            claimed1 > ERC20(lp.token1()).balanceOf(address(this))? 
+                ERC20(lp.token1()).balanceOf(address(this)) : 
+                claimed1
+        );
     }
 }

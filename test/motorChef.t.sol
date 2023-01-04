@@ -124,6 +124,29 @@ contract motorChefTest is Test {
         assertEq(LP.balanceOf(address(chef)), 15e18);
     }
 
+    function testFeeClaim() public {
+        address alice = address(1);
+
+        vm.startPrank(dep);
+            LP.transfer(alice, 5e18);
+        vm.stopPrank();
+        
+        uint initialWCantoAlice = weth.balanceOf(alice); // check in case the user has WCANTO
+        
+        vm.startPrank(alice);
+            LP.approve(address(chef), type(uint256).max);
+            chef.deposit(0, 5e18);
+
+            vm.roll(block.number + 1000);
+
+        vm.stopPrank();
+
+        // there won't be any fees, but want to make sure this doesn't send up errors
+        vm.startPrank(dep);
+            chef.claimLPFees(0);
+        vm.stopPrank();
+    }
+
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //                                                                                                              //
