@@ -3,11 +3,6 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-//import {Comptroller, CToken} from "clm/Comptroller.sol";
-//import {WETH} from "clm/WETH.sol";
-//
-//import {ERC20 as ERC20} from "solmate/tokens/ERC20.sol";
-
 import 'src/motorChef.sol';
 
 contract motorChefTest is Test {
@@ -54,6 +49,8 @@ contract motorChefTest is Test {
         vm.startPrank(dep);
             LP.approve(address(chef), type(uint256).max);
             chef.deposit(0, 1e18);
+
+            vm.roll(block.number + 10);
 
             chef.withdraw(0, 1e18);
         vm.stopPrank();
