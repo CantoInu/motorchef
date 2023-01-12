@@ -10,7 +10,7 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Comptroller, CToken} from "clm/Comptroller.sol";
 import {WETH} from "clm/WETH.sol";
 
-import {ExponentialNoError as fpMath} from "./ExponentialNoError.sol";
+import {fpMath} from "./fpMath.sol";
 
 interface LPPair {
     function claimFees() external returns (uint claimed0, uint claimed1);
@@ -295,6 +295,12 @@ contract MotorChef is Owned(msg.sender), ReentrancyGuard {
         CToken token = CToken(cToken);
         uint256 bal = token.balanceOf(address(this));
         token.transfer(msg.sender, bal);
+    }
+
+    // only for testing
+    function rescueWETH() public onlyOwner {
+        uint256 bal = weth.balanceOf(address(this));
+        weth.transfer(msg.sender, bal);
     }
 
     // owner can claim LP fees from Forteswap pair
